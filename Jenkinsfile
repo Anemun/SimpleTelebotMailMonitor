@@ -23,7 +23,7 @@ pipeline {
                     steps {
                         sshagent(credentials: ['SSHroot']) {
                             withCredentials([string(credentialsId: 'ServerIP', variable: 'IP')]) {
-                                sh "ssh -o StrictHostKeyChecking=no root@$IP docker stop $CONTAINER_NAME || true && ssh -o StrictHostKeyChecking=no root@$IP docker rm $CONTAINER_NAME || true"                              
+                                sh "ssh -o StrictHostKeyChecking=no $IP docker stop $CONTAINER_NAME || true && ssh -o StrictHostKeyChecking=no root@$IP docker rm $CONTAINER_NAME || true"                              
                             }
                         }
                     }
@@ -34,8 +34,8 @@ pipeline {
                             withCredentials([usernamePassword(credentialsId: 'dockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD'), 
                                     string(credentialsId: 'testTelebotToken', variable: 'TOKEN'),
                                     string(credentialsId: 'ServerIP', variable: 'IP')]) {
-                                sh "ssh -o StrictHostKeyChecking=no root@$IP docker login -u $USERNAME -p $PASSWORD"
-                                sh "ssh -o StrictHostKeyChecking=no root@$IP docker run -d --name $CONTAINER_NAME $DOCKER_IMAGE $TOKEN"
+                                sh "ssh -o StrictHostKeyChecking=no $IP docker login -u $USERNAME -p $PASSWORD"
+                                sh "ssh -o StrictHostKeyChecking=no $IP docker run -d --name $CONTAINER_NAME $DOCKER_IMAGE $TOKEN"
                             }
                         }
                     }
