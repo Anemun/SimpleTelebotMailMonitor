@@ -2,6 +2,7 @@ pipeline {
     agent { label 'docker'}
     environment {
         DOCKER_IMAGE = "jackithub/simplemailmonitor:${BUILD_NUMBER}"
+        CONTAINER_NAME = "${params.containerName}"
     }
     stages {        
         stage ('1. Build image'){
@@ -16,27 +17,30 @@ pipeline {
                 }   
             }
         }
-        // stage ('3. Deploy image to remote server') {
-        //     stages {
-        //         stage ('3.1 Stop current container') {
-        //             steps {
-        //                 sshagent(credentials: ['arubaSSHroot']) {
-        //                     sh "ssh -o StrictHostKeyChecking=no root@80.211.30.61 docker stop gimmeSimpleTimeBot || true && ssh -o StrictHostKeyChecking=no root@80.211.30.61 docker rm gimmeSimpleTimeBot || true"                              
-        //                 }
-        //             }
-        //         }
-        //         // stage ('3.2 Run new container') {
-        //         //     steps {
-        //         //         sshagent(credentials: ['arubaSSHroot']) {
-        //         //             withCredentials([usernamePassword(credentialsId: 'dockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD'), 
-        //         //                     string(credentialsId: 'testTelebotToken', variable: 'TOKEN')]) {
-        //         //                 sh "ssh -o StrictHostKeyChecking=no root@80.211.30.61 docker login -u $USERNAME -p $PASSWORD"
-        //         //                 sh "ssh -o StrictHostKeyChecking=no root@80.211.30.61 docker run -d --name gimmeSimpleTimeBot jackithub/testjob01:${BUILD_NUMBER} $TOKEN"
-        //         //             }
-        //         //         }
-        //         //     }
-        //         // }
-        //     }
-        // }
+        stage ('3. Deploy image to remote server') {
+            stages {
+                stage ('3.1 Stop current container') {
+                    steps {
+                        sshagent(credentials: ['SSHroot']) {
+                            withCredentials([string(credentialsId: 'ServerIP', variable: 'IP')]) {
+                                sh "ssh -o StrictHostKeyChecking=no root@$IP docker stop $CONTAINER_NAME || true && ssh -o StrictHostKeyChecking=no root@$IP docker rm $CONTAINER_NAME || true"                              
+                            }
+                        }
+                    }
+                }
+                stage ('3.2 Run new container') {
+                    steps {
+                        sshagent(credentials: ['SSHroot']) {
+                            withCredentials([usernamePassword(credentialsId: 'dockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD'), 
+                                    string(credentialsId: 'testTelebotToken', variable: 'TOKEN'),
+                                    string(credentialsId: 'ServerIP', variable: 'IP')]) {
+                                sh "ssh -o StrictHostKeyChecking=no root@$IP docker login -u $USERNAME -p $PASSWORD"
+                                sh "ssh -o StrictHostKeyChecking=no root@$IP docker run -d --name $CONTAINER_NAME $DOCKER_IMAGE $TOKEN"
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
