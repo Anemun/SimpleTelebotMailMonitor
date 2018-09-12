@@ -1,21 +1,21 @@
 pipeline {
     agent { label 'docker'}
     environment {
-        DOCKER_IMAGE = "jackithub/simplemailmonitor"
+        DOCKER_IMAGE = "jackithub/simplemailmonitor:${BUILD_NUMBER}"
     }
     stages {        
         stage ('1. Build image'){
             steps {
-                sh "docker build -t $DOCKER_IMAGE:${BUILD_NUMBER} -f Dockerfile ."
+                sh "docker build -t $DOCKER_IMAGE -f Dockerfile ."
             }
         }
-        // stage ('2. Push image') {
-        //     steps {
-        //         withDockerRegistry([credentialsId: 'dockerHub', url: ""]) {
-        //         sh "docker push jackithub/testjob01:${BUILD_NUMBER}"
-        //         }   
-        //     }
-        // }
+        stage ('2. Push image') {
+            steps {
+                withDockerRegistry([credentialsId: 'dockerHub', url: ""]) {
+                sh "docker push $DOCKER_IMAGE"
+                }   
+            }
+        }
         // stage ('3. Deploy image to remote server') {
         //     stages {
         //         stage ('3.1 Stop current container') {
@@ -25,17 +25,17 @@ pipeline {
         //                 }
         //             }
         //         }
-        //         stage ('3.2 Run new container') {
-        //             steps {
-        //                 sshagent(credentials: ['arubaSSHroot']) {
-        //                     withCredentials([usernamePassword(credentialsId: 'dockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD'), 
-        //                             string(credentialsId: 'testTelebotToken', variable: 'TOKEN')]) {
-        //                         sh "ssh -o StrictHostKeyChecking=no root@80.211.30.61 docker login -u $USERNAME -p $PASSWORD"
-        //                         sh "ssh -o StrictHostKeyChecking=no root@80.211.30.61 docker run -d --name gimmeSimpleTimeBot jackithub/testjob01:${BUILD_NUMBER} $TOKEN"
-        //                     }
-        //                 }
-        //             }
-        //         }
+        //         // stage ('3.2 Run new container') {
+        //         //     steps {
+        //         //         sshagent(credentials: ['arubaSSHroot']) {
+        //         //             withCredentials([usernamePassword(credentialsId: 'dockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD'), 
+        //         //                     string(credentialsId: 'testTelebotToken', variable: 'TOKEN')]) {
+        //         //                 sh "ssh -o StrictHostKeyChecking=no root@80.211.30.61 docker login -u $USERNAME -p $PASSWORD"
+        //         //                 sh "ssh -o StrictHostKeyChecking=no root@80.211.30.61 docker run -d --name gimmeSimpleTimeBot jackithub/testjob01:${BUILD_NUMBER} $TOKEN"
+        //         //             }
+        //         //         }
+        //         //     }
+        //         // }
         //     }
         // }
     }
