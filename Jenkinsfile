@@ -12,7 +12,7 @@ pipeline {
         ALERT_CHAT_ID = "${params.alertChatId}"
         SUBJECT_CODE = "${params.subjectCode}"
     }
-    stages {        
+    stages {         
         stage ('1. Build image'){
             steps {
                 sh "docker build -t $DOCKER_IMAGE -f Dockerfile ."
