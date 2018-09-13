@@ -23,7 +23,7 @@ pipeline {
                     steps {
                         sshagent(credentials: ['SSHroot']) {
                             withCredentials([string(credentialsId: 'ServerIP', variable: 'IP')]) {
-                                sh "ssh -o StrictHostKeyChecking=no $IP docker stop $CONTAINER_NAME || true && ssh -o StrictHostKeyChecking=no root@$IP docker rm $CONTAINER_NAME || true"                              
+                                sh "ssh -o StrictHostKeyChecking=no $IP docker stop $CONTAINER_NAME || true && ssh -o StrictHostKeyChecking=no $IP docker rm $CONTAINER_NAME || true"                              
                             }
                         }
                     }
@@ -31,11 +31,26 @@ pipeline {
                 stage ('3.2 Run new container') {
                     steps {
                         sshagent(credentials: ['SSHroot']) {
-                            withCredentials([usernamePassword(credentialsId: 'dockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD'), 
-                                    string(credentialsId: 'testTelebotToken', variable: 'TOKEN'),
-                                    string(credentialsId: 'ServerIP', variable: 'IP')]) {
+                            withCredentials([usernamePassword(credentialsId: 'dockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD'),
+                                    string(credentialsId: 'ServerIP', variable: 'IP'),
+                                    string(credentialsId: 'NmailMonitorFromMailbox', variable: 'NmailMonitorFromMailbox'),
+                                    string(credentialsId: 'NmailMonitorFromMailboxPass', variable: 'NmailMonitorFromMailboxPass'),
+                                    string(credentialsId: 'NmailMonitorSmtpServer', variable: 'NmailMonitorSmtpServer'),
+                                    string(credentialsId: 'NmailMonitorImapServer', variable: 'NmailMonitorImapServer'),
+                                    string(credentialsId: 'NmailMonitorToMailbox', variable: 'NmailMonitorToMailbox'),
+                                    string(credentialsId: 'NmailMonitorBotToken', variable: 'NmailMonitorBotToken'),
+                                    string(credentialsId: 'NmailMonitorChatId', variable: 'NmailMonitorChatId'),
+                                    string(credentialsId: 'NmailMonitorSubjectCode', variable: 'NmailMonitorSubjectCode')]) {
                                 sh "ssh -o StrictHostKeyChecking=no $IP docker login -u $USERNAME -p $PASSWORD"
-                                sh "ssh -o StrictHostKeyChecking=no $IP docker run -d --name $CONTAINER_NAME $DOCKER_IMAGE $TOKEN"
+                                sh "ssh -o StrictHostKeyChecking=no $IP docker run -d --restart always --name $CONTAINER_NAME $DOCKER_IMAGE 
+                                    --fromMailbox $NmailMonitorFromMailbox 
+                                    --fromMailboxPass $NmailMonitorFromMailboxPass 
+                                    --smtpServer $NmailMonitorSmtpServer 
+                                    --imapServer $NmailMonitorImapServer 
+                                    --toMailbox $NmailMonitorToMailbox 
+                                    --botToken $NmailMonitorBotToken 
+                                    --botChatId $NmailMonitorChatId 
+                                    --subjectCode $NmailMonitorSubjectCode"
                             }
                         }
                     }
