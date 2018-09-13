@@ -1,5 +1,5 @@
 pipeline {
-    agent { label 'docker'}
+    agent { label 'docker'} 
     environment {
         DOCKER_IMAGE = "jackithub/simplemailmonitor:${BUILD_NUMBER}"
         CONTAINER_NAME = "${params.containerName}"
