@@ -48,7 +48,14 @@ timeFormat = '%Y%m%d%H%M'
 whaitingForResponse = False
 debugEnabled = True
 
+message = "Мониторинг хождения почты до/от {0} запущен.".format(toMailbox)
+url = 'https://api.telegram.org/bot{0}/sendMessage?chat_id={1}&text={2}'.format(botToken, chatId, message)
 debugLog("{0}: monitor started. Checking mail flow from {1} to {2} and back".format(datetime.now(), mailboxLogin, toMailbox))
+try:
+    requests.get(url.encode('UTF-8'))
+except Exception as err:
+    debugLog("{0}: ERROR! {1}".format(datetime.now(),err))
+
 
 def SendMail():
     global lastSendTime, lastDateTimeString
@@ -63,7 +70,7 @@ def SendMail():
         server.ehlo()
         server.starttls()
         server.login(mailboxLogin, mailboxPassword)
-        debugLog("{0}:login successfull, sending...".format(datetime.now()))
+        debugLog("{0}: login successfull, sending...".format(datetime.now()))
 
         BODY = '\r\n'.join(['To: %s' % TO,
                             'From: %s' % mailboxLogin,
@@ -75,7 +82,7 @@ def SendMail():
         debugLog('{0}: email sent to {1}, subject: {2}\n'.format(datetime.now(), TO, SUBJECT))
         lastSendTime = datetime.now()
     except smtplib.SMTPException as err:
-        debugLog(err)
+        debugLog("{0}: ERROR! {1}".format(datetime.now(),err))
         message = "ALARM!!! Не получается отправить тестовое письмо на {0}!\n\n {1}".format(toMailbox, err)
         url = 'https://api.telegram.org/bot{0}/sendMessage?chat_id={1}&text={2}'.format(botToken, chatId, message)
         debugLog("{0}: ALARM!!! Can't send monitor email from {1} to {2}!!! {3}".format(datetime.now(), mailboxLogin, toMailbox, err))
