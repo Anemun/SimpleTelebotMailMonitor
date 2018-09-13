@@ -42,7 +42,7 @@ pipeline {
                                     string(credentialsId: 'NmailMonitorChatId', variable: 'NmailMonitorChatId'),
                                     string(credentialsId: 'NmailMonitorSubjectCode', variable: 'NmailMonitorSubjectCode')]) {
                                 sh "ssh -o StrictHostKeyChecking=no $IP docker login -u $USERNAME -p $PASSWORD"
-                                sh "ssh -o StrictHostKeyChecking=no $IP docker run -d --restart always --name $CONTAINER_NAME $DOCKER_IMAGE --fromMailbox $NmailMonitorFromMailbox --fromMailboxPass $NmailMonitorFromMailboxPass --smtpServer $NmailMonitorSmtpServer --imapServer $NmailMonitorImapServer --toMailbox $NmailMonitorToMailbox --botToken $NmailMonitorBotToken --botChatId $NmailMonitorChatId --subjectCode $NmailMonitorSubjectCode"
+                                sh "ssh -o StrictHostKeyChecking=no $IP docker run -d --restart always -v /etc/localtime:/etc/localtime:ro --name $CONTAINER_NAME $DOCKER_IMAGE --fromMailbox $NmailMonitorFromMailbox --fromMailboxPass $NmailMonitorFromMailboxPass --smtpServer $NmailMonitorSmtpServer --imapServer $NmailMonitorImapServer --toMailbox $NmailMonitorToMailbox --botToken $NmailMonitorBotToken --botChatId $NmailMonitorChatId --subjectCode $NmailMonitorSubjectCode"
                             }
                         }
                     }
