@@ -79,7 +79,7 @@ def SendMail():
 
         
         server.sendmail(mailboxLogin, [TO], BODY)
-        debugLog('{0}: email sent to {1}, subject: {2}\n'.format(datetime.now(), TO, SUBJECT))
+        debugLog('{0}: email sent to {1}, subject: {2}'.format(datetime.now(), TO, SUBJECT))
         lastSendTime = datetime.now()
     except smtplib.SMTPException as err:
         debugLog("{0}: ERROR! {1}".format(datetime.now(),err))
@@ -100,10 +100,11 @@ def GotMail():
     for i in range(0,5):  
         try: 
             mailbox = imaplib.IMAP4_SSL(imapSrv)
-            debugLog("{0}: attempt {1}".format(datetime.now(),i))
+            debugLog("{0}: attempt {1}".format(datetime.now(),i+1))
             mailbox.login(mailboxLogin, mailboxPassword)
             mailbox.list()                                              # Выводит список папок в почтовом ящике.
             mailbox.select("inbox")                                     # Подключаемся к папке "входящие".
+            #pylint: disable=unused-variable
             result, data = mailbox.search(None, "ALL")
             ids = data[0]                                               # Получаем строку номеров писем
             debugLog("{0}: login successfull, searching...".format(datetime.now()))
@@ -129,7 +130,9 @@ def GotMail():
                     lastRcv = timeString
                     debugLog("{0}: found mail.".format(datetime.now()))
             
+            mailbox.close()
             mailbox.logout()
+            debugLog("{0}: logout.".format(datetime.now()))
         except Exception as err:
             debugLog(err)
             message = "ALARM!!! Не получается получить список писем с ящика мониторинга ({0})!\n\n {1}".format(mailboxLogin, err)
@@ -146,7 +149,7 @@ def GotMail():
 while True:
     if not whaitingForResponse:
         if datetime.now().minute <= 5:          # если текущее время 5 минут любого часа, отправляем письмо
-            debugLog("{0}: it's time to send mail!".format(datetime.now()))
+            debugLog("\n{0}: it's time to send mail!".format(datetime.now()))
             lastDateTimeString = str(datetime.now().strftime(timeFormat))
             whaitingForResponse = True
             SendMail()
