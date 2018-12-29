@@ -5,6 +5,8 @@ import logging
 import smtplib
 import argparse, sys
 import time
+import random
+from enum import Enum
 from datetime import datetime
 
 import requests
@@ -30,148 +32,139 @@ mailIdentity = args.subjectCode
 botToken = args.botToken  
 chatId = args.botChatId
 
+version = "2.0.0"
 
+""" 2.0 code
 
-# send a message every hour with unique id (yearmonthdayhour)
-# monitor incoming messages for that message
-# past 45min send alarm messages
+states: init, send, listen
+init (also on startup):
+    randomly choose delay (1-90 seconds)
+    check for telegram
+send:
+    try to send mail (5 attemps) -> if unsuccefull, throw alarm
+    (with unique id - yearmonthdayhourminutesecond)
+listen:
+    every 30 seconds check for returned mail
+    if past 5 minutes - alarm
+ 
+
+end of 2.0 code """
+
+debugEnabled = True
+
+class State(Enum):
+    init = 0
+    send = 1
+    listen = 2
 
 def debugLog(message):
     if debugEnabled:
-        print(message)
+        print("{0}: {1}".format(datetime.now(), message))
         sys.stdout.flush()
 
-lastSendTime = datetime.now()
-lastDateTimeString = ""
-lastRcv = ""
-timeFormat = '%Y%m%d%H%M'
-whaitingForResponse = False
-debugEnabled = True
-
-message = "Мониторинг хождения почты до/от {0} запущен.".format(toMailbox)
-url = 'https://api.telegram.org/bot{0}/sendMessage?chat_id={1}&text={2}'.format(botToken, chatId, message)
-debugLog("{0}: monitor started. Checking mail flow from {1} to {2} and back".format(datetime.now(), mailboxLogin, toMailbox))
-try:
-    requests.get(url.encode('UTF-8'))
-except Exception as err:
-    debugLog("{0}: ERROR! {1}".format(datetime.now(),err))
-
-
-def SendMail():
-    global lastSendTime, lastDateTimeString
-
-    TO = toMailbox
-    SUBJECT = lastDateTimeString
-    TEXT = 'testing message flow in and out of {0}'.format(mailDomain)
-    
-    debugLog("{0}: Trying to send mail".format(datetime.now()))
+def sendTelegramMsg(message):    
+    url = 'https://api.telegram.org/bot{0}/sendMessage?chat_id={1}&text={2}'.format(botToken, chatId, message)
     try:
-        server = smtplib.SMTP(smtpSrv, 25)
-        server.ehlo()
-        server.starttls()
-        server.login(mailboxLogin, mailboxPassword)
-        debugLog("{0}: login successfull, sending...".format(datetime.now()))
+        requests.get(url.encode('UTF-8'))
+    except Exception as err:
+        debugLog("ERROR! {0}".format(err))
 
-        BODY = '\r\n'.join(['To: %s' % TO,
-                            'From: %s' % mailboxLogin,
-                            'Subject: %s' % SUBJECT,
-                            '', TEXT])
+state = State.init
+timeFormat = '%Y%m%d%H%M%S'
+lastSendTime = None
+timecode = ""
+lastReceivedTime = None
 
-        
-        server.sendmail(mailboxLogin, [TO], BODY)
-        debugLog('{0}: email sent to {1}, subject: {2}'.format(datetime.now(), TO, SUBJECT))
-        lastSendTime = datetime.now()
-    except smtplib.SMTPException as err:
-        debugLog("{0}: ERROR! {1}".format(datetime.now(),err))
-        message = "ALARM!!! Не получается отправить тестовое письмо на {0}!\n\n {1}".format(toMailbox, err)
-        url = 'https://api.telegram.org/bot{0}/sendMessage?chat_id={1}&text={2}'.format(botToken, chatId, message)
-        debugLog("{0}: ALARM!!! Can't send monitor email from {1} to {2}!!! {3}".format(datetime.now(), mailboxLogin, toMailbox, err))
-        try:
-            requests.get(url.encode('UTF-8'))
-        except Exception as err:
-            debugLog("{0}: ERROR! {1}".format(datetime.now(),err))
+sendTelegramMsg("Мониторинг хождения почты до/от {0} запущен. (v{1})".format(toMailbox, version))
+debugLog("monitor started. Checking mail flow from {0} to {1} and back".format(mailboxLogin, toMailbox))
 
-    server.quit()
-
-
-def GotMail():        
-    debugLog("{0}: Trying to read mail (5 attempts)".format(datetime.now()))
-    gotTheMessage = False
-    for i in range(0,5):  
-        try: 
-            mailbox = imaplib.IMAP4_SSL(imapSrv)
-            debugLog("{0}: attempt {1}".format(datetime.now(),i+1))
-            mailbox.login(mailboxLogin, mailboxPassword)
-            mailbox.list()                                              # Выводит список папок в почтовом ящике.
-            mailbox.select("inbox")                                     # Подключаемся к папке "входящие".
-            #pylint: disable=unused-variable
-            result, data = mailbox.search(None, "ALL")
-            ids = data[0]                                               # Получаем строку номеров писем
-            debugLog("{0}: login successfull, searching...".format(datetime.now()))
-
-            id_list = ids.split()                                       # Разделяем ID писем
-            id_list_last_five = id_list[-5:]                            # Последние 5 ID
-            
-            global lastRcv
-            
-            debugLog("{0}: checking mail on {1}, looking for subject {2}-{3}"
-                                .format(datetime.now(), mailboxLogin, mailIdentity, lastDateTimeString))
-            for i in id_list_last_five:                                 
-                email_id = i
-                result, data = mailbox.fetch(email_id, "(RFC822)")
-                raw_email = str(data[0][1])                             # Тело письма в необработанном виде
-                eml = raw_email.split('Subject: ')[1].split('\\r')[0].split('-')    # вычленяем тему письма, разбиваем её
-                timeString = eml[1]
+while True:    
+    if state is State.init:
+        gotTheMessage = False
+        delay = random.randint(1, 90)
+        time.sleep(delay)
+        timecode = str(datetime.now().strftime(timeFormat))
+        state = State.send
+    if state is State.send:
+        TO = toMailbox
+        SUBJECT = timecode
+        TEXT = 'testing message flow in and out of {0}'.format(mailDomain)
+        for attempt in range(1, 6):
+            debugLog("Trying to send mail (attempt {0} of 5".format(attempt))
+            try:
+                server = smtplib.SMTP(smtpSrv, 25)
+                server.ehlo()
+                server.starttls()
+                server.login(mailboxLogin, mailboxPassword)
+                debugLog("login successfull, sending...")
+                BODY = '\r\n'.join(['To: %s' % TO,
+                                    'From: %s' % mailboxLogin,
+                                    'Subject: %s' % SUBJECT,
+                                    '', TEXT])                
+                server.sendmail(mailboxLogin, [TO], BODY)
+                debugLog('email sent to {0}, subject: {1}'.format(TO, SUBJECT))
+                lastSendTime = datetime.now()
+                state = State.listen
+            except smtplib.SMTPException as err:
+                if (attempt == 5):
+                    sendTelegramMsg("ALARM!!! Не получается отправить тестовое письмо на {0}!\n\n {1}".format(toMailbox, err))
+                    debugLog("ALARM!!! Can't send monitor email from {0} to {1}!!! {2}".format(mailboxLogin, toMailbox, err))
+                    state = State.init
+                    break  
+                else:                                      
+                    time.sleep(10)
+                    continue
+            break
+        server.quit()
+    if state is State.listen:
+        for attempt in range(1,6):  
+            debugLog("Trying to read mail (attempt {0} of 5".format(attempt))
+            try: 
+                mailbox = imaplib.IMAP4_SSL(imapSrv)
+                mailbox.login(mailboxLogin, mailboxPassword)
+                mailbox.list()                                              # Выводит список папок в почтовом ящике.
+                mailbox.select("inbox")                                     # Подключаемся к папке "входящие".
+                #pylint: disable=unused-variable
+                result, data = mailbox.search(None, "ALL")
+                ids = data[0]                                               # Получаем строку номеров писем
+                debugLog("login successfull, searching...")
+                id_list = ids.split()                                       # Разделяем ID писем
+                id_list_last_five = id_list[-5:]                            # Последние 5 ID 
+                debugLog("checking mail on {0}, looking for subject {1}-{2}"
+                                    .format(mailboxLogin, mailIdentity, timecode))
+                for i in id_list_last_five:                                 
+                    email_id = i
+                    result, data = mailbox.fetch(email_id, "(RFC822)")
+                    raw_email = str(data[0][1])                             # Тело письма в необработанном виде
+                    eml = raw_email.split('Subject: ')[1].split('\\r')[0].split('-')    # вычленяем тему письма, разбиваем её
+                    timeString = eml[1]
+                    
+                    # первая часть темы должны быть "receivedXXX" а затем номер отправки
+                    if (eml[0] == mailIdentity) and (eml[1] == timecode):
+                        gotTheMessage = True
+                        lastRcv = timeString
+                        debugLog("found mail.")
+                        break
                 
-                # первая часть темы должны быть "received" а затем номер отправки
-                if (eml[0] == mailIdentity) and \
-                    (timeString == lastDateTimeString):
-                    gotTheMessage = True
-                    lastRcv = timeString
-                    debugLog("{0}: found mail.".format(datetime.now()))
-            
-            mailbox.close()
-            mailbox.logout()
-            debugLog("{0}: logout.".format(datetime.now()))
-        except Exception as err:
-            debugLog(err)
-            message = "ALARM!!! Не получается получить список писем с ящика мониторинга ({0})!\n\n {1}".format(mailboxLogin, err)
-            url = 'https://api.telegram.org/bot{0}/sendMessage?chat_id={1}&text={2}'.format(botToken, chatId, message)
-            debugLog("{0}: ALARM!!! Can't check for email from {1} to {2}!!! {3}".format(datetime.now(), toMailbox, mailboxLogin, err))
-            try:
-                requests.get(url.encode('UTF-8'))
-            except Exception as err:
-                debugLog("{0}: ERROR! {1}".format(datetime.now(), err))
-            continue
-        break
-    return gotTheMessage
-
-while True:
-    if not whaitingForResponse:
-        if datetime.now().minute <= 5:          # если текущее время 5 минут любого часа, отправляем письмо
-            debugLog("\n{0}: it's time to send mail!".format(datetime.now()))
-            lastDateTimeString = str(datetime.now().strftime(timeFormat))
-            whaitingForResponse = True
-            SendMail()
-
-    while whaitingForResponse:                  # ждём ответа с интервалом в 3 минуты        
-        debugLog("{0}: checking mail...".format(datetime.now()))
-        if GotMail():                           # если мы получили ответное письмо
-            debugLog("{0}: got mail, everything fine! msgNumber: {1}".format(datetime.now(), lastRcv))
-            whaitingForResponse = False
-
-        elif datetime.now().minute >= 45:       # если не получили и время уже 45 минут
-            whaitingForResponse = False
-            message = "ALARM!!! Не ходит почта в {0}!".format(mailDomain)
-            debugLog("{0}: ALARM!!! It's 45min already and sill no mail received (it must be msgNumber {1})".format(datetime.now(), lastDateTimeString))
-            url = 'https://api.telegram.org/bot{0}/sendMessage?chat_id={1}&text={2}'.format(botToken, chatId, message)
-            try:
-                requests.get(url.encode('UTF-8'))
-            except Exception as err:
-                debugLog("{0}: ERROR! {1}".format(datetime.now(), err))
-            
-        else:
-            debugLog("{0}: there is no mail yet... (looking for msgNumber {1}). Retry in 3 minutes".format(datetime.now(), lastDateTimeString))
-        time.sleep(180)
+                mailbox.close()
+                mailbox.logout()
+                debugLog("logout.")
+            except Exception as err:   
+                if (attempt == 5):
+                    sendTelegramMsg("ALARM!!! Не получается получить список писем с ящика мониторинга ({0})!\n\n {1}".format(mailboxLogin, err))                    
+                    debugLog("ALARM!!! Can't check for email from {0} to {1}!!! {2}".format(toMailbox, mailboxLogin, err))                    
+                    state = State.init
+                    break
+                else:
+                    time.sleep(10)
+                    continue
+            break
     
-    time.sleep(30)
+    diff = datetime.now() - lastSendTime
+    if gotTheMessage == True:
+        time.sleep(180)
+        state = State.init 
+    elif gotTheMessage == False and diff.minutes >= 5:
+        sendTelegramMsg("ALARM!!! Не ходит почта в {0}!".format(mailDomain))
+        debugLog("{0}: ALARM!!! It's 45min already and sill no mail received (it must be msgNumber {1})".format(datetime.now(), timecode))
+        state = State.init        
