@@ -158,13 +158,13 @@ while True:
                     state = State.init
                     break
                 else:
-                    time.sleep(10)
+                    time.sleep(15)
                     continue
             break
     
     diff = datetime.now() - lastSendTime
     if gotTheMessage == True:
-        debugLog("waiting for 180 seconds till nex cycle")
+        debugLog("waiting for 180 seconds till next cycle")
         time.sleep(180)
         state = State.init 
     elif gotTheMessage == False and diff.seconds >= 300:
