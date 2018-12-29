@@ -139,6 +139,7 @@ while True:
                     raw_email = str(data[0][1])                             # Тело письма в необработанном виде
                     eml = raw_email.split('Subject: ')[1].split('\\r')[0].split('-')    # вычленяем тему письма, разбиваем её
                     timeString = eml[1]
+                    debugLog(eml)
                     
                     # первая часть темы должны быть "receivedXXX" а затем номер отправки
                     if (eml[0] == mailIdentity) and (eml[1] == timecode):
