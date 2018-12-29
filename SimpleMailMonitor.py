@@ -32,7 +32,7 @@ mailIdentity = args.subjectCode
 botToken = args.botToken  
 chatId = args.botChatId
 
-version = "2.0.3"
+version = "2.0.4"
 
 """ 2.0 code
 
@@ -166,7 +166,7 @@ while True:
         debugLog("waiting for 180 seconds till nex cycle")
         time.sleep(180)
         state = State.init 
-    elif gotTheMessage == False and diff.date.minutes >= 5:
+    elif gotTheMessage == False and diff.seconds >= 300:
         sendTelegramMsg("ALARM!!! Не ходит почта в {0}!".format(mailDomain))
         debugLog("{0}: ALARM!!! It's 45min already and sill no mail received (it must be msgNumber {1})".format(datetime.now(), timecode))
         state = State.init        
