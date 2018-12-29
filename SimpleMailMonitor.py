@@ -82,6 +82,7 @@ while True:
     if state is State.init:
         gotTheMessage = False
         delay = random.randint(1, 90)
+        debugLog("init stage.. delaying for {0} seconds".format(delay))
         time.sleep(delay)
         timecode = str(datetime.now().strftime(timeFormat))
         state = State.send
@@ -162,6 +163,7 @@ while True:
     
     diff = datetime.now() - lastSendTime
     if gotTheMessage == True:
+        debugLog("waiting for 180 seconds till nex cycle")
         time.sleep(180)
         state = State.init 
     elif gotTheMessage == False and diff.minutes >= 5:
