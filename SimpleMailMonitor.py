@@ -32,7 +32,7 @@ mailIdentity = args.subjectCode
 botToken = args.botToken  
 chatId = args.botChatId
 
-version = "2.0.4"
+version = "2.0.5"
 
 """ 2.0 code
 
@@ -91,7 +91,7 @@ while True:
         SUBJECT = timecode
         TEXT = 'testing message flow in and out of {0}'.format(mailDomain)
         for attempt in range(1, 6):
-            debugLog("Trying to send mail (attempt {0} of 5".format(attempt))
+            debugLog("Trying to send mail (attempt {0} of 5)".format(attempt))
             try:
                 server = smtplib.SMTP(smtpSrv, 25)
                 server.ehlo()
@@ -119,7 +119,7 @@ while True:
         server.quit()
     if state is State.listen:
         for attempt in range(1,6):  
-            debugLog("Trying to read mail (attempt {0} of 5".format(attempt))
+            debugLog("Trying to read mail (attempt {0} of 5)".format(attempt))
             try: 
                 mailbox = imaplib.IMAP4_SSL(imapSrv)
                 mailbox.login(mailboxLogin, mailboxPassword)
