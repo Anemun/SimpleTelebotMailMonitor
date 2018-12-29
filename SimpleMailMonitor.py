@@ -32,7 +32,7 @@ mailIdentity = args.subjectCode
 botToken = args.botToken  
 chatId = args.botChatId
 
-version = "2.0.5"
+version = "2.0.6"
 
 """ 2.0 code
 
@@ -139,7 +139,7 @@ while True:
                     raw_email = str(data[0][1])                             # Тело письма в необработанном виде
                     eml = raw_email.split('Subject: ')[1].split('\\r')[0].split('-')    # вычленяем тему письма, разбиваем её
                     timeString = eml[1]
-                    debugLog(eml)
+                    #debugLog(eml)
                     
                     # первая часть темы должны быть "receivedXXX" а затем номер отправки
                     if (eml[0] == mailIdentity) and (eml[1] == timecode):
@@ -150,7 +150,7 @@ while True:
                 
                 mailbox.close()
                 mailbox.logout()
-                debugLog("logout.")
+                debugLog("logout. wait for 30sec")
             except Exception as err:   
                 if (attempt == 5):
                     sendTelegramMsg("ALARM!!! Не получается получить список писем с ящика мониторинга ({0})!\n\n {1}".format(mailboxLogin, err))                    
