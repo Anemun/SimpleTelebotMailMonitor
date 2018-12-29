@@ -32,7 +32,7 @@ mailIdentity = args.subjectCode
 botToken = args.botToken  
 chatId = args.botChatId
 
-version = "2.0.0"
+version = "2.0.2"
 
 """ 2.0 code
 
@@ -76,7 +76,7 @@ timecode = ""
 lastReceivedTime = None
 
 sendTelegramMsg("Мониторинг хождения почты до/от {0} запущен. (v{1})".format(toMailbox, version))
-debugLog("monitor started. Checking mail flow from {0} to {1} and back".format(mailboxLogin, toMailbox))
+debugLog("monitor started. Checking mail flow from {0} to {1} and back. (v{2})".format(mailboxLogin, toMailbox, version))
 
 while True:    
     if state is State.init:
