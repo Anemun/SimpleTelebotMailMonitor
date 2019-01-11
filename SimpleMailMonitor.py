@@ -37,7 +37,7 @@ chatId = args.botChatId
 alarmTimeout = args.alarmTimeout
 cycleInterval = args.cycleInterval
 
-version = "2.0.8"
+version = "2.0.9"
 
 """ 2.0 code
 
@@ -169,10 +169,10 @@ while True:
     
     diff = datetime.now() - lastSendTime
     if gotTheMessage == True:
-        debugLog("waiting for {0} seconds till next cycle".format(60*cycleInterval))
+        debugLog("waiting for {0} seconds till next cycle".format(int(60*cycleInterval)))
         time.sleep(60 * cycleInterval)
         state = State.init 
-    elif gotTheMessage == False and diff.seconds >= 60*alarmTimeout:
+    elif gotTheMessage == False and diff.seconds >= int(60*alarmTimeout):
         sendTelegramMsg("ALARM!!! Не ходит почта в {0}!".format(mailDomain))
-        debugLog("ALARM!!! {0} min already passed and sill no mail received (it must be msgNumber {1})".format(60*alarmTimeout, timecode))
+        debugLog("ALARM!!! {0} min already passed and sill no mail received (it must be msgNumber {1})".format(int(60*alarmTimeout), timecode))
         state = State.init        
