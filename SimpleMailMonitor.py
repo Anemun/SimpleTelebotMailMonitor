@@ -20,6 +20,9 @@ parser.add_argument('--toMailbox', help='mailbox to which mail will be sent')
 parser.add_argument('--botToken', help='telegram bot token to whom notifications will be sent')
 parser.add_argument('--botChatId', help='telegram bot chat ID to which notifications will be sent')
 parser.add_argument('--subjectCode', help='code to identify returned email')
+parser.add_argument('--alarmTimeout', help='throw alarm after this number of minutes')
+parser.add_argument('--cycleInterval', help='sleep that many minutes between send cycles')
+
 args=parser.parse_args()
 
 toMailbox = args.toMailbox
@@ -31,8 +34,10 @@ imapSrv = args.imapServer
 mailIdentity = args.subjectCode          
 botToken = args.botToken  
 chatId = args.botChatId
+alarmTimeout = args.alarmTimeout
+cycleInterval = args.cycleInterval
 
-version = "2.0.7"
+version = "2.0.8"
 
 """ 2.0 code
 
@@ -164,10 +169,10 @@ while True:
     
     diff = datetime.now() - lastSendTime
     if gotTheMessage == True:
-        debugLog("waiting for 180 seconds till next cycle")
-        time.sleep(600)
+        debugLog("waiting for {0} seconds till next cycle".format(60*cycleInterval))
+        time.sleep(60 * cycleInterval)
         state = State.init 
-    elif gotTheMessage == False and diff.seconds >= 300:
+    elif gotTheMessage == False and diff.seconds >= 60*alarmTimeout:
         sendTelegramMsg("ALARM!!! Не ходит почта в {0}!".format(mailDomain))
-        debugLog("{0}: ALARM!!! It's 45min already and sill no mail received (it must be msgNumber {1})".format(datetime.now(), timecode))
+        debugLog("ALARM!!! {0} min already passed and sill no mail received (it must be msgNumber {1})".format(60*alarmTimeout, timecode))
         state = State.init        
