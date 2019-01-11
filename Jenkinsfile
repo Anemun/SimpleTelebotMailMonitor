@@ -1,7 +1,7 @@
 pipeline {
     agent { label 'docker'} 
     environment {
-        DOCKER_IMAGE = "jackithub/simplemailmonitor:${BUILD_NUMBER}"
+        DOCKER_IMAGE = "jackithub/simplemailmonitor:latest"
         CONTAINER_NAME = "${params.containerName}"
         FROM_MAILBOX = "${params.fromMailbox}"
         FROM_MAILBOX_PASSWORD = "${params.fromMailboxPass}"
