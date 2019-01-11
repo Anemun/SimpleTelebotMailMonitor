@@ -170,7 +170,7 @@ while True:
     diff = datetime.now() - lastSendTime
     if gotTheMessage == True:
         debugLog("waiting for {0} seconds till next cycle".format(int(60*cycleInterval)))
-        time.sleep(60 * cycleInterval)
+        time.sleep(int(60 * cycleInterval))
         state = State.init 
     elif gotTheMessage == False and diff.seconds >= int(60*alarmTimeout):
         sendTelegramMsg("ALARM!!! Не ходит почта в {0}!".format(mailDomain))
